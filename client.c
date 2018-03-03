@@ -5,48 +5,55 @@
 #include <sys/types.h>
 
 #include <netinet/in.h>
-#include <arpa/inet.h>
+#include <netdb.h>
 
+#include <arpa/inet.h>
 #include <unistd.h>
 
 int main(int argc, char **argv) {
 	
 	char *method;
-	char *address;
+	char *name;
 
 	if (argc < 3) {
-		printf("Usage: ./client <METHOD> <ADDRESS>\n");
+		printf("Usage: ./client <METHOD> <HOST NAME>\n");
 		return 0;
 	}
 
 	method = argv[1];
-	address = argv[2];
+	name = argv[2];
+
+	struct hostent *host;
+	host = gethostbyname(name);
+	
+	char *address;
+	address = inet_ntoa(*(struct in_addr *)host->h_addr_list[0]);
+
+	struct servent *srv;
+	srv = getservbyname("http", "tcp");
 
 	int client_socket;
 	client_socket = socket(AF_INET, SOCK_STREAM, 0);
 
 	struct sockaddr_in remote_address;
 	remote_address.sin_family = AF_INET;
-	remote_address.sin_port = htons(80);
-	remote_address.sin_addr.s_addr = inet_addr(address);
+	remote_address.sin_port = srv->s_port;
+	inet_aton(address, &remote_address.sin_addr.s_addr);
 
 	connect(client_socket, (struct sockaddr *) &remote_address, sizeof(remote_address));
 	
-	char *path = " / ";
+	char request[100];
 	
-	// ./client GET 216.58.199.35 for testing
-	char *protocol = "HTTP/1.1\r\nHost: www.google.com.au\r\n\r\n";
-
-	char request[1024];
-	//char request[sizeof(method) + sizeof(path) + sizeof(protocol)];
-
-	strcat(request, method);
-	strcat(request, path);
-	strcat(request, protocol);
-
+	strcpy(request, method);
+	strcat(request, " / ");
+	strcat(request, "HTTP/1.1\r\n");
+	strcat(request, "Host: ");
+	strcat(request, host->h_name);
+	strcat(request, "\r\n\r\n");
+	
 	char response[4096];
 
-	send(client_socket, request, sizeof(request), 0);
+	send(client_socket, request, strlen(request), 0);
 	recv(client_socket, &response, sizeof(response), 0);
 
 	printf("%s\n", response);
