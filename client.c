@@ -10,6 +10,26 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
+char *bldreq(const char *method, const char *path, const char *name) {
+	char *header = "HTTP/1.1\r\nHost: ";
+	char *term = "\r\n\r\n";
+
+	size_t size = strlen(method) 
+		+ strlen(path) 
+		+ strlen(header) 
+		+ strlen(name) 
+		+ strlen(term) + 1;
+
+	char *request = malloc(size);
+	strcpy(request, method);
+	strcat(request, path);
+	strcat(request, header);
+	strcat(request, name);
+	strcat(request, term);
+
+	return request;
+}
+
 int main(int argc, char **argv) {
 	
 	char *method;
@@ -38,16 +58,8 @@ int main(int argc, char **argv) {
 	memcpy(&remote_address.sin_addr, host->h_addr_list[0], host->h_length);
 
 	connect(client_socket, (struct sockaddr *) &remote_address, sizeof(remote_address));
-	
-	char request[strlen(method)];
-	
-	strcpy(request, method);
-	strcat(request, " / ");
-	strcat(request, "HTTP/1.1\r\n");
-	strcat(request, "Host: ");
-	strcat(request, host->h_name);
-	strcat(request, "\r\n\r\n");
-	
+
+	char *request = bldreq(method, " / ", host->h_name);
 	char response[4096];
 
 	send(client_socket, request, strlen(request), 0);
@@ -55,6 +67,7 @@ int main(int argc, char **argv) {
 
 	printf("%s\n", response);
 
+	free(request);
 	close(client_socket);
 
 	return 0;
