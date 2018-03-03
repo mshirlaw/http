@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
 
 	connect(client_socket, (struct sockaddr *) &remote_address, sizeof(remote_address));
 	
-	char request[100];
+	char request[strlen(method)];
 	
 	strcpy(request, method);
 	strcat(request, " / ");
