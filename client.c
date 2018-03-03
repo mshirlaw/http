@@ -25,9 +25,6 @@ int main(int argc, char **argv) {
 
 	struct hostent *host;
 	host = gethostbyname(name);
-	
-	char *address;
-	address = inet_ntoa(*(struct in_addr *)host->h_addr_list[0]);
 
 	struct servent *srv;
 	srv = getservbyname("http", "tcp");
@@ -37,8 +34,8 @@ int main(int argc, char **argv) {
 
 	struct sockaddr_in remote_address;
 	remote_address.sin_family = AF_INET;
-	remote_address.sin_port = srv->s_port;
-	inet_aton(address, &remote_address.sin_addr.s_addr);
+	remote_address.sin_port = srv->s_port;	
+	memcpy(&remote_address.sin_addr, host->h_addr_list[0], host->h_length);
 
 	connect(client_socket, (struct sockaddr *) &remote_address, sizeof(remote_address));
 	
