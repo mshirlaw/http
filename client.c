@@ -10,7 +10,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
-char *bldreq(const char *method, const char *path, const char *name) {
+void bldreq(char **request, const char *method, const char *path, const char *name) {
 	char *header = "HTTP/1.1\r\nHost: ";
 	char *term = "\r\n\r\n";
 
@@ -20,14 +20,12 @@ char *bldreq(const char *method, const char *path, const char *name) {
 		+ strlen(name) 
 		+ strlen(term) + 1;
 
-	char *request = malloc(size);
-	strcpy(request, method);
-	strcat(request, path);
-	strcat(request, header);
-	strcat(request, name);
-	strcat(request, term);
-
-	return request;
+	*request = malloc(size);
+	strcpy(*request, method);
+	strcat(*request, path);
+	strcat(*request, header);
+	strcat(*request, name);
+	strcat(*request, term);
 }
 
 int main(int argc, char **argv) {
@@ -59,9 +57,10 @@ int main(int argc, char **argv) {
 
 	connect(client_socket, (struct sockaddr *) &remote_address, sizeof(remote_address));
 
-	char *request = bldreq(method, " / ", host->h_name);
+	char *request;
 	char response[4096];
 
+	bldreq(&request, method, " / ", host->h_name);
 	send(client_socket, request, strlen(request), 0);
 	recv(client_socket, &response, sizeof(response), 0);
 
