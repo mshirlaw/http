@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 
 	if (argc < 3) {
 		printf("Usage: ./client <METHOD> <HOST NAME>\n");
-		return 0;
+		exit(0);
 	}
 
 	method = argv[1];
@@ -43,26 +43,49 @@ int main(int argc, char **argv) {
 
 	struct hostent *host;
 	host = gethostbyname(name);
+	if (host == NULL) {
+		fprintf(stderr,"Error, no such host\n");
+		exit(0);
+	}
 
 	struct servent *srv;
 	srv = getservbyname("http", "tcp");
 
 	int client_socket;
 	client_socket = socket(AF_INET, SOCK_STREAM, 0);
+	if (client_socket < 0) {
+		fprintf(stderr, "Error, unable to open socket\n");
+		exit(0);
+	}
 
 	struct sockaddr_in remote_address;
 	remote_address.sin_family = AF_INET;
 	remote_address.sin_port = srv->s_port;	
 	memcpy(&remote_address.sin_addr, host->h_addr_list[0], host->h_length);
 
-	connect(client_socket, (struct sockaddr *) &remote_address, sizeof(remote_address));
+	int ret;
+	ret = connect(client_socket, (struct sockaddr *) &remote_address, sizeof(remote_address));
+	if (ret < 0) {
+		fprintf(stderr, "Error, unable to connect to socket");
+		exit(0);
+	}
 
 	char *request;
 	char response[4096];
 
 	bldreq(&request, method, " / ", host->h_name);
-	send(client_socket, request, strlen(request), 0);
-	recv(client_socket, &response, sizeof(response), 0);
+
+	ret = send(client_socket, request, strlen(request), 0);
+	if (ret < 0) {
+		fprintf(stderr, "Error, unable to send request\n");
+		exit(0);
+	}
+
+	ret = recv(client_socket, &response, sizeof(response), 0);
+	if (ret < 0) {
+		fprintf(stderr, "Error, unable to receive messsage\n");
+		exit(0);
+	}
 
 	printf("%s\n", response);
 
