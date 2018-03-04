@@ -60,13 +60,19 @@ int main(int argc, char **argv) {
 
 	struct sockaddr_in remote_address;
 	remote_address.sin_family = AF_INET;
-	remote_address.sin_port = srv->s_port;	
+	
+	if(!strcmp(host->h_name, "localhost")) {
+		remote_address.sin_port = htons(9000);
+	} else {
+		remote_address.sin_port = srv->s_port;
+	}
+	
 	memcpy(&remote_address.sin_addr, host->h_addr_list[0], host->h_length);
 
 	int ret;
 	ret = connect(client_socket, (struct sockaddr *) &remote_address, sizeof(remote_address));
 	if (ret < 0) {
-		fprintf(stderr, "Error, unable to connect to socket");
+		fprintf(stderr, "Error, unable to connect to socket\n");
 		exit(0);
 	}
 
